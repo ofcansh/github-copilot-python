@@ -26,6 +26,25 @@
     <span id="hint-count" aria-live="polite">Hints used: 0</span>
     <span id="message"></span>
   </div>
+  <section id="leaderboard" aria-labelledby="leaderboard-title">
+    <h2 id="leaderboard-title">Leaderboard</h2>
+    <div class="leaderboard-table-wrap">
+      <table>
+        <caption class="visually-hidden">Top 10 fastest completed Sudoku games</caption>
+        <thead>
+          <tr>
+            <th scope="col">Rank</th>
+            <th scope="col">Player</th>
+            <th scope="col">Time</th>
+            <th scope="col">Difficulty</th>
+            <th scope="col">Hints</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboard-body"></tbody>
+      </table>
+    </div>
+    <p id="leaderboard-empty">Complete a puzzle to add your time.</p>
+  </section>
   <script src="/static/main.js"></script>
 </body>
 </html>

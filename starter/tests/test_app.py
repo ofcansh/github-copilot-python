@@ -11,6 +11,8 @@ def test_index_returns_html(client):
     assert b"Sudoku Game" in response.data
     assert b'role="grid"' in response.data
     assert b'aria-label="Sudoku puzzle"' in response.data
+    assert b'id="leaderboard"' in response.data
+    assert b'id="leaderboard-body"' in response.data
 
 
 def test_new_game_returns_nine_by_nine_puzzle(client):
@@ -76,6 +78,20 @@ def test_timer_is_present_and_uses_elapsed_timestamps():
     assert 'setInterval(updateTimer, 250)' in source
     assert 'clearInterval(timerInterval)' in source
     assert 'stopTimer();' in source
+
+
+def test_leaderboard_uses_validated_local_storage_and_completion_data():
+    main_js = Path(__file__).parents[1] / 'static' / 'main.js'
+    source = main_js.read_text(encoding='utf-8')
+
+    assert "localStorage.getItem(LEADERBOARD_KEY)" in source
+    assert "localStorage.setItem(LEADERBOARD_KEY" in source
+    assert 'entries.filter(isValidLeaderboardEntry)' in source
+    assert '.slice(0, 10)' in source
+    assert 'playerName' in source
+    assert 'difficulty: currentDifficulty' in source
+    assert 'hints: hintsUsed' in source
+    assert 'window.prompt' in source
 
 
 def test_new_game_resets_hint_counter():

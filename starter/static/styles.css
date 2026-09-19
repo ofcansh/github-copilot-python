@@ -126,6 +126,50 @@ button:hover {
     color: #263238;
 }
 
+#leaderboard {
+    width: min(92vw, 760px);
+    margin: 36px auto 48px;
+    text-align: left;
+}
+
+#leaderboard h2 {
+    margin-bottom: 12px;
+    color: #263238;
+}
+
+.leaderboard-table-wrap {
+    overflow-x: auto;
+    background: #fff;
+    border: 1px solid #c5d0d4;
+    border-radius: 6px;
+}
+
+#leaderboard table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 520px;
+}
+
+#leaderboard th,
+#leaderboard td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #dce3e5;
+    text-align: left;
+}
+
+#leaderboard th {
+    background: #e8f1f3;
+    color: #263238;
+}
+
+#leaderboard tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+#leaderboard-empty {
+    color: #455a64;
+}
+
 .visually-hidden {
     position: absolute;
     width: 1px;
