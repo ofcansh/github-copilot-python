@@ -44,17 +44,91 @@ def fill_board(board):
                 return False
     return True
 
+
+def _valid_givens(board):
+    for row in range(SIZE):
+        for col in range(SIZE):
+            value = board[row][col]
+            if value == EMPTY:
+                continue
+            if not isinstance(value, int) or not 1 <= value <= SIZE:
+                return False
+            board[row][col] = EMPTY
+            safe = is_safe(board, row, col, value)
+            board[row][col] = value
+            if not safe:
+                return False
+    return True
+
+
+def count_solutions(board, limit=2):
+    if not isinstance(limit, int) or limit < 1:
+        raise ValueError('limit must be a positive integer')
+
+    board = deep_copy(board)
+    if not _valid_givens(board):
+        return 0
+
+    def search():
+        best_cell = None
+        best_candidates = None
+
+        for row in range(SIZE):
+            for col in range(SIZE):
+                if board[row][col] != EMPTY:
+                    continue
+
+                candidates = [
+                    number for number in range(1, SIZE + 1)
+                    if is_safe(board, row, col, number)
+                ]
+                if not candidates:
+                    return 0
+                if best_candidates is None or len(candidates) < len(best_candidates):
+                    best_cell = (row, col)
+                    best_candidates = candidates
+
+        if best_cell is None:
+            return 1
+
+        row, col = best_cell
+        solutions = 0
+        for candidate in best_candidates:
+            board[row][col] = candidate
+            solutions += search()
+            board[row][col] = EMPTY
+            if solutions >= limit:
+                return solutions
+        return solutions
+
+    return search()
+
+
 def remove_cells(board, clues):
     if not isinstance(clues, int) or not 0 <= clues <= SIZE * SIZE:
         raise ValueError('clues must be an integer between 0 and 81')
 
-    attempts = SIZE * SIZE - clues
-    while attempts > 0:
-        row = random.randrange(SIZE)
-        col = random.randrange(SIZE)
-        if board[row][col] != EMPTY:
-            board[row][col] = EMPTY
-            attempts -= 1
+    positions = [(row, col) for row in range(SIZE) for col in range(SIZE)]
+    random.shuffle(positions)
+    current_clues = sum(
+        cell != EMPTY for row in board for cell in row
+    )
+
+    for row, col in positions:
+        if current_clues <= clues:
+            break
+        if board[row][col] == EMPTY:
+            continue
+
+        value = board[row][col]
+        board[row][col] = EMPTY
+        if count_solutions(board, limit=2) == 1:
+            current_clues -= 1
+        else:
+            board[row][col] = value
+
+    if current_clues != clues:
+        raise ValueError('could not generate a unique puzzle with the requested clues')
 
 def generate_puzzle(clues=35):
     if not isinstance(clues, int) or not 0 <= clues <= SIZE * SIZE:

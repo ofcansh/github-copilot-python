@@ -56,6 +56,27 @@ def test_fill_board_creates_valid_solution():
     assert is_valid_solution(board)
 
 
+def test_count_solutions_finds_one_solution_for_completed_board():
+    board = sudoku_logic.create_empty_board()
+    assert sudoku_logic.fill_board(board)
+
+    assert sudoku_logic.count_solutions(board) == 1
+
+
+def test_count_solutions_stops_at_limit_for_multiple_solutions():
+    board = sudoku_logic.create_empty_board()
+
+    assert sudoku_logic.count_solutions(board, limit=2) == 2
+
+
+def test_count_solutions_returns_zero_for_invalid_board():
+    board = sudoku_logic.create_empty_board()
+    board[0][0] = 5
+    board[0][1] = 5
+
+    assert sudoku_logic.count_solutions(board) == 0
+
+
 def test_generate_puzzle_returns_solution_and_requested_clues():
     puzzle, solution = sudoku_logic.generate_puzzle(clues=35)
 
@@ -68,6 +89,20 @@ def test_generate_puzzle_returns_solution_and_requested_clues():
         for column in range(9):
             if puzzle[row][column] != 0:
                 assert puzzle[row][column] == solution[row][column]
+    assert sudoku_logic.count_solutions(puzzle) == 1
+
+
+def test_generate_puzzle_is_unique_for_each_difficulty():
+    for clues in sudoku_logic.DIFFICULTY_CLUES.values():
+        puzzle, solution = sudoku_logic.generate_puzzle(clues)
+
+        assert sum(cell != 0 for row in puzzle for cell in row) == clues
+        assert sudoku_logic.count_solutions(puzzle) == 1
+        assert all(
+            puzzle[row][column] in (0, solution[row][column])
+            for row in range(sudoku_logic.SIZE)
+            for column in range(sudoku_logic.SIZE)
+        )
 
 
 def test_generate_puzzle_rejects_out_of_range_clues():
