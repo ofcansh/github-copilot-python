@@ -13,6 +13,8 @@ def test_index_returns_html(client):
     assert b'aria-label="Sudoku puzzle"' in response.data
     assert b'id="leaderboard"' in response.data
     assert b'id="leaderboard-body"' in response.data
+    assert b'id="theme-toggle"' in response.data
+    assert b'aria-pressed="false"' in response.data
 
 
 def test_new_game_returns_nine_by_nine_puzzle(client):
@@ -92,6 +94,19 @@ def test_leaderboard_uses_validated_local_storage_and_completion_data():
     assert 'difficulty: currentDifficulty' in source
     assert 'hints: hintsUsed' in source
     assert 'window.prompt' in source
+
+
+def test_theme_uses_validated_local_storage_and_accessible_state():
+    main_js = Path(__file__).parents[1] / 'static' / 'main.js'
+    source = main_js.read_text(encoding='utf-8')
+
+    assert "const THEME_KEY = 'sudokuTheme'" in source
+    assert "theme === 'light' || theme === 'dark'" in source
+    assert 'localStorage.getItem(THEME_KEY)' in source
+    assert 'localStorage.setItem(THEME_KEY, nextTheme)' in source
+    assert 'initializeTheme();' in source
+    assert 'dataset.theme' in source
+    assert 'aria-pressed' in source
 
 
 def test_new_game_resets_hint_counter():
