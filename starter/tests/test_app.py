@@ -8,6 +8,8 @@ def test_index_returns_html(client):
 
     assert response.status_code == 200
     assert b"Sudoku Game" in response.data
+    assert b'role="grid"' in response.data
+    assert b'aria-label="Sudoku puzzle"' in response.data
 
 
 def test_new_game_returns_nine_by_nine_puzzle(client):

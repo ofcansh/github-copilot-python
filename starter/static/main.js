@@ -8,20 +8,65 @@ function createBoardElement() {
   for (let i = 0; i < SIZE; i++) {
     const rowDiv = document.createElement('div');
     rowDiv.className = 'sudoku-row';
+    rowDiv.setAttribute('role', 'row');
     for (let j = 0; j < SIZE; j++) {
       const input = document.createElement('input');
       input.type = 'text';
       input.maxLength = 1;
-      input.className = 'sudoku-cell';
+      input.inputMode = 'numeric';
+      input.autocomplete = 'off';
+      input.className = getCellClasses(i, j);
+      input.setAttribute('role', 'gridcell');
+      input.setAttribute('aria-label', `Row ${i + 1}, column ${j + 1}`);
       input.dataset.row = i;
       input.dataset.col = j;
       input.addEventListener('input', (e) => {
-        const val = e.target.value.replace(/[^1-9]/g, '');
-        e.target.value = val;
+        e.target.value = e.target.value.replace(/[^1-9]/g, '').slice(0, 1);
+        updateConflicts();
       });
+      input.addEventListener('keydown', handleCellKeydown);
       rowDiv.appendChild(input);
     }
     boardDiv.appendChild(rowDiv);
+  }
+}
+
+function getCellClasses(row, col) {
+  const boxRow = Math.floor(row / 3);
+  const boxCol = Math.floor(col / 3);
+  const boxTone = (boxRow + boxCol) % 2 === 0 ? 'box-tone-a' : 'box-tone-b';
+  return `sudoku-cell ${boxTone}`;
+}
+
+function handleCellKeydown(event) {
+  const directions = {
+    ArrowUp: [-1, 0],
+    ArrowDown: [1, 0],
+    ArrowLeft: [0, -1],
+    ArrowRight: [0, 1]
+  };
+  const direction = directions[event.key];
+  if (!direction) return;
+
+  event.preventDefault();
+  const row = Number(event.target.dataset.row);
+  const col = Number(event.target.dataset.col);
+  focusNextEditableCell(row, col, direction[0], direction[1]);
+}
+
+function focusNextEditableCell(row, col, rowStep, colStep) {
+  let nextRow = row + rowStep;
+  let nextCol = col + colStep;
+  while (nextRow >= 0 && nextRow < SIZE && nextCol >= 0 && nextCol < SIZE) {
+    const nextCell = document.querySelector(
+      `.sudoku-cell[data-row="${nextRow}"][data-col="${nextCol}"]`
+    );
+    if (nextCell && !nextCell.disabled) {
+      nextCell.focus();
+      return;
+    }
+    nextRow += rowStep;
+    nextCol += colStep;
   }
 }
 
@@ -38,13 +83,44 @@ function renderPuzzle(puz) {
       if (val !== 0) {
         inp.value = val;
         inp.disabled = true;
-        inp.className += ' prefilled';
+        inp.classList.add('prefilled');
+        inp.setAttribute('aria-readonly', 'true');
       } else {
         inp.value = '';
         inp.disabled = false;
+        inp.setAttribute('aria-readonly', 'false');
       }
     }
   }
+  updateConflicts();
+}
+
+function getCurrentBoard() {
+  const inputs = document.querySelectorAll('.sudoku-cell');
+  return Array.from(inputs).map((input) => input.value ? parseInt(input.value, 10) : 0);
+}
+
+function updateConflicts() {
+  const inputs = Array.from(document.querySelectorAll('.sudoku-cell'));
+  const values = getCurrentBoard();
+  inputs.forEach((input, index) => {
+    if (input.disabled) return;
+
+    const value = values[index];
+    const row = Number(input.dataset.row);
+    const col = Number(input.dataset.col);
+    const hasConflict = value !== 0 && inputs.some((other, otherIndex) => {
+      if (otherIndex === index || values[otherIndex] !== value) return false;
+      const otherRow = Number(other.dataset.row);
+      const otherCol = Number(other.dataset.col);
+      const sameBox = Math.floor(row / 3) === Math.floor(otherRow / 3)
+        && Math.floor(col / 3) === Math.floor(otherCol / 3);
+      return row === otherRow || col === otherCol || sameBox;
+    });
+
+    input.classList.toggle('conflict', hasConflict);
+    input.setAttribute('aria-invalid', hasConflict ? 'true' : 'false');
+  });
 }
 
 async function newGame() {
@@ -82,9 +158,9 @@ async function checkSolution() {
   for (let idx = 0; idx < inputs.length; idx++) {
     const inp = inputs[idx];
     if (inp.disabled) continue;
-    inp.className = 'sudoku-cell';
+    inp.classList.remove('incorrect');
     if (incorrect.has(idx)) {
-      inp.className = 'sudoku-cell incorrect';
+      inp.classList.add('incorrect');
     }
   }
   if (incorrect.size === 0) {

@@ -7,7 +7,17 @@
 </head>
 <body>
   <h1>Sudoku Game</h1>
-  <div id="sudoku-board"></div>
+  <main>
+    <p id="board-instructions" class="visually-hidden">
+      Use the arrow keys to move between editable cells. Enter a digit from 1 to 9 or clear a cell.
+    </p>
+    <div
+      id="sudoku-board"
+      role="grid"
+      aria-label="Sudoku puzzle"
+      aria-describedby="board-instructions"
+    ></div>
+  </main>
   <div class="controls">
     <button id="new-game">New Game</button>
     <button id="check-solution">Check Solution</button>
