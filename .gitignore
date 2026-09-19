@@ -4,3 +4,6 @@ Thumbs.db
 
 # Ignore Python virtual environment
 .venv/
+.pytest_cache/
+__pycache__/
+*.py[cod]
