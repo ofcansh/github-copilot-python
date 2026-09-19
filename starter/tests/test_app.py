@@ -67,6 +67,17 @@ def test_hint_button_and_counter_are_present(client):
     assert b'id="hint-count"' in response.data
 
 
+def test_timer_is_present_and_uses_elapsed_timestamps():
+    main_js = Path(__file__).parents[1] / 'static' / 'main.js'
+    source = main_js.read_text(encoding='utf-8')
+
+    assert b'id="timer"' in app.app.test_client().get('/').data
+    assert 'Date.now()' in source
+    assert 'setInterval(updateTimer, 250)' in source
+    assert 'clearInterval(timerInterval)' in source
+    assert 'stopTimer();' in source
+
+
 def test_new_game_resets_hint_counter():
     main_js = Path(__file__).parents[1] / 'static' / 'main.js'
     source = main_js.read_text(encoding='utf-8')

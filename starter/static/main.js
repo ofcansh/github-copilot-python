@@ -2,6 +2,8 @@
 const SIZE = 9;
 let puzzle = [];
 let hintsUsed = 0;
+let timerStartedAt = null;
+let timerInterval = null;
 
 function createBoardElement() {
   const boardDiv = document.getElementById('sudoku-board');
@@ -117,6 +119,41 @@ function resetHintCounter() {
   updateHintCount();
 }
 
+function formatElapsedTime(elapsedMilliseconds) {
+  const totalSeconds = Math.floor(elapsedMilliseconds / 1000);
+  const seconds = totalSeconds % 60;
+  const totalMinutes = Math.floor(totalSeconds / 60);
+  const minutes = totalMinutes % 60;
+  const hours = Math.floor(totalMinutes / 60);
+  const paddedMinutes = String(minutes).padStart(2, '0');
+  const paddedSeconds = String(seconds).padStart(2, '0');
+
+  if (hours > 0) {
+    return `${hours}:${paddedMinutes}:${paddedSeconds}`;
+  }
+  return `${paddedMinutes}:${paddedSeconds}`;
+}
+
+function updateTimer() {
+  if (timerStartedAt === null) return;
+  const elapsedMilliseconds = Date.now() - timerStartedAt;
+  document.getElementById('timer').innerText = `Time: ${formatElapsedTime(elapsedMilliseconds)}`;
+}
+
+function stopTimer() {
+  if (timerInterval !== null) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+}
+
+function startTimer() {
+  stopTimer();
+  timerStartedAt = Date.now();
+  updateTimer();
+  timerInterval = setInterval(updateTimer, 250);
+}
+
 function updateConflicts() {
   const inputs = Array.from(document.querySelectorAll('.sudoku-cell'));
   const values = getCurrentBoard();
@@ -143,8 +180,13 @@ function updateConflicts() {
 async function newGame() {
   const res = await fetch('/new');
   const data = await res.json();
+  if (!res.ok || !data.puzzle) {
+    document.getElementById('message').innerText = data.error || 'Unable to start a new game.';
+    return;
+  }
   renderPuzzle(data.puzzle);
   resetHintCounter();
+  startTimer();
   document.getElementById('message').innerText = '';
 }
 
@@ -217,6 +259,7 @@ async function checkSolution() {
     }
   }
   if (incorrect.size === 0) {
+    stopTimer();
     msg.style.color = '#388e3c';
     msg.innerText = 'Congratulations! You solved it!';
   } else {
