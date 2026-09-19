@@ -1,6 +1,7 @@
 // Client-side rendering and interaction for the Flask-backed Sudoku
 const SIZE = 9;
 let puzzle = [];
+let hintsUsed = 0;
 
 function createBoardElement() {
   const boardDiv = document.getElementById('sudoku-board');
@@ -100,6 +101,22 @@ function getCurrentBoard() {
   return Array.from(inputs).map((input) => input.value ? parseInt(input.value, 10) : 0);
 }
 
+function getBoardMatrix() {
+  const values = getCurrentBoard();
+  return Array.from({length: SIZE}, (_, row) => (
+    values.slice(row * SIZE, (row + 1) * SIZE)
+  ));
+}
+
+function updateHintCount() {
+  document.getElementById('hint-count').innerText = `Hints used: ${hintsUsed}`;
+}
+
+function resetHintCounter() {
+  hintsUsed = 0;
+  updateHintCount();
+}
+
 function updateConflicts() {
   const inputs = Array.from(document.querySelectorAll('.sudoku-cell'));
   const values = getCurrentBoard();
@@ -127,7 +144,43 @@ async function newGame() {
   const res = await fetch('/new');
   const data = await res.json();
   renderPuzzle(data.puzzle);
+  resetHintCounter();
   document.getElementById('message').innerText = '';
+}
+
+async function useHint() {
+  const res = await fetch('/hint', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({board: getBoardMatrix()})
+  });
+  const data = await res.json();
+  const msg = document.getElementById('message');
+  if (data.error) {
+    msg.style.color = '#d32f2f';
+    msg.innerText = data.error;
+    return;
+  }
+
+  const input = document.querySelector(
+    `.sudoku-cell[data-row="${data.row}"][data-col="${data.col}"]`
+  );
+  if (!input || input.disabled || input.value) {
+    msg.style.color = '#d32f2f';
+    msg.innerText = 'That cell is no longer available for a hint.';
+    return;
+  }
+
+  input.value = data.value;
+  input.disabled = true;
+  input.classList.add('prefilled', 'hinted');
+  input.setAttribute('aria-readonly', 'true');
+  input.setAttribute('aria-label', `${input.getAttribute('aria-label')} (hint)`);
+  hintsUsed += 1;
+  updateHintCount();
+  updateConflicts();
+  msg.style.color = '#2e7d32';
+  msg.innerText = 'A correct cell was filled in for you.';
 }
 
 async function checkSolution() {
@@ -175,7 +228,9 @@ async function checkSolution() {
 // Wire buttons
 window.addEventListener('load', () => {
   document.getElementById('new-game').addEventListener('click', newGame);
+  document.getElementById('hint').addEventListener('click', useHint);
   document.getElementById('check-solution').addEventListener('click', checkSolution);
+  updateHintCount();
   // initialize
   newGame();
 });

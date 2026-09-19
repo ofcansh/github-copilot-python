@@ -1,4 +1,5 @@
 import copy
+from pathlib import Path
 
 import app
 
@@ -24,6 +25,54 @@ def test_new_game_returns_nine_by_nine_puzzle(client):
     assert all(len(row) == 9 for row in puzzle)
     assert sum(cell != 0 for row in puzzle for cell in row) == 40
     assert app.CURRENT["solution"] is not None
+
+
+def test_hint_returns_correct_value_for_an_empty_cell(client):
+    response = client.get('/new?clues=80')
+    puzzle = response.get_json()['puzzle']
+    solution = app.CURRENT['solution']
+    empty_cell = next(
+        (row, col)
+        for row in range(9)
+        for col in range(9)
+        if puzzle[row][col] == 0
+    )
+
+    hint_response = client.post('/hint', json={'board': puzzle})
+
+    assert hint_response.status_code == 200
+    assert hint_response.get_json() == {
+        'row': empty_cell[0],
+        'col': empty_cell[1],
+        'value': solution[empty_cell[0]][empty_cell[1]]
+    }
+
+
+def test_hint_reports_no_empty_cells(client):
+    client.get('/new?clues=81')
+    solution = app.CURRENT['solution']
+
+    response = client.post('/hint', json={'board': solution})
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        'error': 'There are no empty cells available for a hint'
+    }
+
+
+def test_hint_button_and_counter_are_present(client):
+    response = client.get('/')
+
+    assert b'id="hint"' in response.data
+    assert b'id="hint-count"' in response.data
+
+
+def test_new_game_resets_hint_counter():
+    main_js = Path(__file__).parents[1] / 'static' / 'main.js'
+    source = main_js.read_text(encoding='utf-8')
+
+    assert 'function resetHintCounter()' in source
+    assert 'resetHintCounter();' in source
 
 
 def test_new_game_supports_difficulty_levels(client):
