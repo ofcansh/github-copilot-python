@@ -3,6 +3,11 @@ import random
 
 SIZE = 9
 EMPTY = 0
+DIFFICULTY_CLUES = {
+    'easy': 45,
+    'medium': 35,
+    'hard': 28
+}
 
 def deep_copy(board):
     return copy.deepcopy(board)
@@ -40,6 +45,9 @@ def fill_board(board):
     return True
 
 def remove_cells(board, clues):
+    if not isinstance(clues, int) or not 0 <= clues <= SIZE * SIZE:
+        raise ValueError('clues must be an integer between 0 and 81')
+
     attempts = SIZE * SIZE - clues
     while attempts > 0:
         row = random.randrange(SIZE)
@@ -49,6 +57,9 @@ def remove_cells(board, clues):
             attempts -= 1
 
 def generate_puzzle(clues=35):
+    if not isinstance(clues, int) or not 0 <= clues <= SIZE * SIZE:
+        raise ValueError('clues must be an integer between 0 and 81')
+
     board = create_empty_board()
     fill_board(board)
     solution = deep_copy(board)

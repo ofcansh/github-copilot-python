@@ -1,6 +1,14 @@
 import sudoku_logic
 
 
+def test_difficulty_clues_has_expected_values():
+    assert sudoku_logic.DIFFICULTY_CLUES == {
+        'easy': 45,
+        'medium': 35,
+        'hard': 28
+    }
+
+
 def is_valid_solution(board):
     expected = set(range(1, sudoku_logic.SIZE + 1))
 
@@ -60,3 +68,13 @@ def test_generate_puzzle_returns_solution_and_requested_clues():
         for column in range(9):
             if puzzle[row][column] != 0:
                 assert puzzle[row][column] == solution[row][column]
+
+
+def test_generate_puzzle_rejects_out_of_range_clues():
+    for clues in (-1, 82):
+        try:
+            sudoku_logic.generate_puzzle(clues)
+        except ValueError as error:
+            assert str(error) == 'clues must be an integer between 0 and 81'
+        else:
+            raise AssertionError('generate_puzzle accepted invalid clues')

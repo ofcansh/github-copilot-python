@@ -24,6 +24,56 @@ def test_new_game_returns_nine_by_nine_puzzle(client):
     assert app.CURRENT["solution"] is not None
 
 
+def test_new_game_supports_difficulty_levels(client):
+    expected_clues = {
+        'easy': 45,
+        'medium': 35,
+        'hard': 28
+    }
+
+    for difficulty, clues in expected_clues.items():
+        response = client.get(f'/new?difficulty={difficulty}')
+
+        assert response.status_code == 200
+        puzzle = response.get_json()['puzzle']
+        assert sum(cell != 0 for row in puzzle for cell in row) == clues
+
+
+def test_new_game_accepts_case_insensitive_difficulty(client):
+    response = client.get('/new?difficulty=Easy')
+
+    assert response.status_code == 200
+    puzzle = response.get_json()['puzzle']
+    assert sum(cell != 0 for row in puzzle for cell in row) == 45
+
+
+def test_new_game_rejects_invalid_difficulty(client):
+    response = client.get('/new?difficulty=expert')
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        'error': 'Invalid difficulty. Choose easy, medium, or hard'
+    }
+
+
+def test_new_game_rejects_invalid_clues(client):
+    for clues in ('not-a-number', '-1', '82'):
+        response = client.get(f'/new?clues={clues}')
+
+        assert response.status_code == 400
+        assert response.get_json() == {
+            'error': 'clues must be an integer between 0 and 81'
+        }
+
+
+def test_difficulty_takes_precedence_over_clues(client):
+    response = client.get('/new?difficulty=hard&clues=45')
+
+    assert response.status_code == 200
+    puzzle = response.get_json()['puzzle']
+    assert sum(cell != 0 for row in puzzle for cell in row) == 28
+
+
 def test_check_returns_error_when_no_game_exists(client):
     board = [[0 for _ in range(9)] for _ in range(9)]
 
